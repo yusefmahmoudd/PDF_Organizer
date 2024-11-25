@@ -1,52 +1,47 @@
 from sentence_transformers import SentenceTransformer
-import pandas as pd
 from pypdf import PdfReader
-from sklearn.cluster import KMeans
-import os
-import shutil
-
-# %%
-import matplotlib.pylab as plt
+import pandas as pd
 import numpy as np
-# %% 
+from sklearn.cluster import KMeans
+import os,shutil
 
-reader1 = PdfReader("jailbrokenllm.pdf") 
-page1 = reader1.pages[0]
-reader2 = PdfReader("backdoorattacks.pdf")
-page2 = reader2.pages[0]
-reader3 = PdfReader("efficientdata.pdf")
-page3 = reader3.pages[0]
-reader4 = PdfReader("taskspecificdata.pdf")
-page4 = reader4.pages[0]
+# get the list of PDF file names in the folder
+messy_folder_path = 'C:\\Users\\yusef\\OneDrive\\Desktop\\Unorganized PDFs\\'
+pdf_files = []
+for file in os.listdir(messy_folder_path):
+    if file.endswith('.pdf'):
+        pdf_files.append(file)  
 
-page1emb =page1.extract_text()
-page2emb = page2.extract_text()
-page3emb = page3.extract_text()
-page4emb = page4.extract_text()
+# turn the first page of all the PDFs into text embeddings
+def text_to_emb(pdf_path):
+    reader = PdfReader(pdf_path)
+    page = reader.pages[0]
+    return page.extract_text()
 
-# load embedding model
+abstract_list = []
+for pdf in pdf_files:
+    full_path = os.path.join(messy_folder_path, pdf)  
+    text_emb = text_to_emb(full_path) 
+    abstract_list.append(text_emb)
+
+# convert text embeddings and run kmeans
 model = SentenceTransformer("all-MiniLM-L6-v2")
-
-abstract_files = ["jailbrokenllm.pdf","backdoorattacks.pdf","efficientdata.pdf","taskspecificdata.pdf"]
-abstract_list = [page1emb,page2emb,page3emb,page4emb]
-
-embeddings = model.encode(abstract_list) # calculate embeddings
-
-# Do KMeans for the abstracts
+embeddings = model.encode(abstract_list) 
 km = KMeans(n_clusters = 3, random_state=50)
 y_predicted = km.fit_predict(embeddings)
 
-# Make a new folder for organized files
-organized_folder = "organized_abstracts"
-os.makedirs(organized_folder, exist_ok=True)
+print(y_predicted)
 
+#create required amount of cluster folders
+organized_folder_path = 'C:\\Users\\yusef\\OneDrive\\Desktop\\Organized PDFs\\'
+os.makedirs(organized_folder_path, exist_ok=True)
 
 for cluster in np.unique(y_predicted):
-    cluster_folder = os.path.join(organized_folder,f"Cluster_{cluster}")
+    cluster_folder = os.path.join(organized_folder_path,f"Cluster_{cluster}")
     os.makedirs(cluster_folder,exist_ok=True)
-    
-for i,cluster, in enumerate(y_predicted):
-    moving_file = abstract_files[i]
-    destination_folder = os.path.join(organized_folder,f"Cluster_{cluster}")
-    shutil.move(moving_file,os.path.join(destination_folder,os.path.basename(moving_file)))
 
+#move pdf files from jumbled folder to organized folder inside of respected subfolder
+for i,cluster, in enumerate(y_predicted):
+    moving_file = os.path.join(messy_folder_path,pdf_files[i])
+    destination_folder = os.path.join(organized_folder_path,f"Cluster_{cluster}")
+    shutil.move(moving_file,os.path.join(destination_folder,os.path.basename(moving_file)))
