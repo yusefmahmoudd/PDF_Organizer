@@ -26,15 +26,20 @@ page4emb = page4.extract_text()
 
 # load embedding model
 model = SentenceTransformer("all-MiniLM-L6-v2")
+
+abstract_files = ["jailbrokenllm.pdf","backdoorattacks.pdf","efficientdata.pdf","taskspecificdata.pdf"]
 abstract_list = [page1emb,page2emb,page3emb,page4emb]
+
 embeddings = model.encode(abstract_list) # calculate embeddings
 
+# Do KMeans for the abstracts
 km = KMeans(n_clusters = 3, random_state=50)
 y_predicted = km.fit_predict(embeddings)
+
+# Make a new folder for organized files
 organized_folder = "organized_abstracts"
 os.makedirs(organized_folder, exist_ok=True)
 
-abstract_files = ["jailbrokenllm.pdf","backdoorattacks.pdf","efficientdata.pdf","taskspecificdata.pdf"]
 
 for cluster in np.unique(y_predicted):
     cluster_folder = os.path.join(organized_folder,f"Cluster_{cluster}")
@@ -42,6 +47,6 @@ for cluster in np.unique(y_predicted):
     
 for i,cluster, in enumerate(y_predicted):
     moving_file = abstract_files[i]
-    destination_folder = os.path.join(cluster_folder,f"Cluster_{cluster}")
-    shutil.move(moving_file,os.path.join(destination_folder,moving_file))
+    destination_folder = os.path.join(organized_folder,f"Cluster_{cluster}")
+    shutil.move(moving_file,os.path.join(destination_folder,os.path.basename(moving_file)))
 
