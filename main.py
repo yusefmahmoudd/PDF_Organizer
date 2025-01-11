@@ -4,6 +4,8 @@ import pandas as pd
 import numpy as np
 from sklearn.cluster import KMeans
 import os,shutil
+from tqdm import tqdm
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 # get the list of PDF file names in the folder
 messy_folder_path = 'C:\\Users\\yusef\\OneDrive\\Desktop\\Unorganized PDFs\\'
@@ -19,7 +21,7 @@ def text_to_emb(pdf_path):
     return page.extract_text()
 
 abstract_list = []
-for pdf in pdf_files:
+for pdf in tqdm(pdf_files, desc="Processing PDFS"):
     full_path = os.path.join(messy_folder_path, pdf)  
     text_emb = text_to_emb(full_path) 
     abstract_list.append(text_emb)
